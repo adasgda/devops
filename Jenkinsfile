@@ -4,7 +4,7 @@ pipeline {
     environment {
         REPO = 'https://github.com/adasgda/devops.git'
         BRANCH = 'main'
-        DOCKER_IMAGE = 'bmi-app-image'
+        DOCKER_IMAGE = 'bmi-image'
     }
 
     stages {
@@ -16,13 +16,16 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat script: 'docker build -t %DOCKER_IMAGE% .'
-            }
+                script {
+                    docker.build(env.DOCKER_IMAGE)
+                }
         }
 
         stage('Run Docker Compose') {
             steps {
-                bat script: 'docker-compose up -d'
+                script {
+                    docker.image("${env.DOCKER_IMAGE}:latest").run("-p 4000:4000")
+                }
             }
         }
 
@@ -40,7 +43,6 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                // Tutaj można dodać kroki wdrożenia do różnych środowisk
             }
         }
     }
