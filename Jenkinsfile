@@ -10,10 +10,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                bat script: '''
-                    git clone -b %BRANCH% %REPO%
-                    cd bmi-app
-                '''
+                git branch: "${BRANCH}", url: "${REPO}"
             }
         }
 
