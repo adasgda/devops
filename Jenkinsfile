@@ -10,28 +10,29 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: "${BRANCH}", url: "${REPO}"
+                bat script: '''
+                    git clone -b %BRANCH% %REPO%
+                    cd bmi-app
+                '''
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    dockerImage = docker.build("${DOCKER_IMAGE}")
-                }
+                bat script: 'docker build -t %DOCKER_IMAGE% .'
             }
         }
 
         stage('Run Docker Compose') {
             steps {
-                sh 'docker-compose up -d'
+                bat script: 'docker-compose up -d'
             }
         }
 
         stage('Test') {
             steps {
                 script {
-                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/bmi -H "Content-Type: application/json" -d \'{"weight": 70, "height": 1.75}\'', returnStdout: true).trim()
+                    def response = bat(script: 'curl -s -o NUL -w "%%{http_code}" -X POST http://localhost:5000/bmi -H "Content-Type: application/json" -d "{\\"weight\\": 70, \\"height\\": 1.75}"', returnStdout: true).trim()
                     if (response != '200') {
                         error "Test failed with response code ${response}"
                     }
@@ -42,8 +43,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                echo 'Loading...'
-                echo 'Success...'
+                // Tutaj można dodać kroki wdrożenia do różnych środowisk
             }
         }
     }
@@ -52,7 +52,7 @@ pipeline {
         failure {
             emailext (
                 subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) failed",
-                body: "Please see the console for more details.",
+                body: "Please see the console output for more details.",
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
@@ -60,7 +60,7 @@ pipeline {
         success {
             emailext (
                 subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) succeeded",
-                body: "Successful build and deployment environment.",
+                body: "Build and deployment were successful.",
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
