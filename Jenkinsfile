@@ -20,7 +20,7 @@ pipeline {
                     docker.build(env.DOCKER_IMAGE)
                 }
         }
-
+    }
         stage('Run Docker Compose') {
             steps {
                 script {
