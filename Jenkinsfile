@@ -29,19 +29,11 @@ pipeline {
             }
         }
 
-      stage('Test') {
+           stage('Test') {
             steps {
                 script {
                     // Testowanie aplikacji
-                    def isUnix = isUnix()
-                    def response
-
-                    if (isUnix) {
-                        response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/bmi -H "Content-Type: application/json" -d \'{"weight": 70, "height": 1.75}\'', returnStdout: true).trim()
-                    } else {
-                        response = bat(script: 'curl -s -o NUL -w "%%{http_code}" -X POST http://localhost:5000/bmi -H "Content-Type: application/json" -d "{\\"weight\\": 70, \\"height\\": 1.75}"', returnStdout: true).trim()
-                    }
-
+                    def response = bat(script: 'curl -s -o NUL -w "%%{http_code}" -X GET "http://localhost:5000/bmi?weight=70&height=1.75"', returnStdout: true).trim()
                     if (response != '200') {
                         error "Test failed with response code ${response}"
                     }
