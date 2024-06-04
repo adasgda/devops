@@ -30,12 +30,16 @@ pipeline {
         }
         
         stage('Test') {
-            steps {
-                script {
-                    echo 'Testing application...'
-                    }
-                }
+    steps {
+        script {
+            def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/bmi -H "Content-Type: application/json" -d "{\"weight\": 70, \"height\": 1.75}"', returnStdout: true).trim()
+            if (response != '200') {
+                error "Test failed with response code ${response}"
             }
+        }
+    }
+}
+
 
 
         stage('Deploy') {
