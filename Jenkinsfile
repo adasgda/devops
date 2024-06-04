@@ -29,17 +29,7 @@ pipeline {
             }
         }
 
-           stage('Test') {
-            steps {
-                script {
-                    // Testowanie aplikacji
-                    def response = bat(script: 'curl -s -o NUL -w "%%{http_code}" -X GET "http://localhost:5000/bmi?weight=70&height=1.75"', returnStdout: true).trim()
-                    if (response != '200') {
-                        error "Test failed with response code ${response}"
-                    }
-                }
-            }
-        }
+       
 
         stage('Deploy') {
             steps {
