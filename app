@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-
 app = Flask(__name__)
 
 @app.route('/bmi', methods=['POST'])
@@ -11,4 +10,4 @@ def calculate_bmi():
     return jsonify(bmi=bmi)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0')
