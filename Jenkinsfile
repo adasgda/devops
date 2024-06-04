@@ -19,12 +19,15 @@ pipeline {
                 script {
                     docker.build(env.DOCKER_IMAGE)
                 }
+            }
         }
-    }
+
         stage('Run Docker Compose') {
             steps {
                 script {
-                    docker.image("${env.DOCKER_IMAGE}:latest").run("-p 5000:5000")
+                    // Uruchom kontener w tle
+                    sh 'docker-compose up -d'
+                    sleep 10 // Czekaj na uruchomienie kontenera
                 }
             }
         }
@@ -32,7 +35,8 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    def response = bat(script: 'curl -s -o NUL -w "%%{http_code}" -X POST http://localhost:5000/bmi -H "Content-Type: application/json" -d "{\\"weight\\": 70, \\"height\\": 1.75}"', returnStdout: true).trim()
+                    // Testowanie aplikacji
+                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" -X GET "http://localhost:5000/bmi?weight=70&height=1.75"', returnStdout: true).trim()
                     if (response != '200') {
                         error "Test failed with response code ${response}"
                     }
@@ -48,6 +52,10 @@ pipeline {
     }
 
     post {
+        always {
+            // Zatrzymaj kontenery po zakończeniu pipeline
+            sh 'docker-compose down'
+        }
         failure {
             emailext (
                 subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) failed",
@@ -55,7 +63,6 @@ pipeline {
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
-
         success {
             emailext (
                 subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) succeeded",
