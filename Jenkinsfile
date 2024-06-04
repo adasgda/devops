@@ -17,17 +17,14 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}")
+                    docker.build(env.DOCKER_IMAGE)
                 }
-            }
         }
-
-        stage('Run Docker Container') {
+    }
+        stage('Run Docker Compose') {
             steps {
                 script {
-                    // Uruchom kontener w tle
-                    sh 'docker run -d --name bmi-container -p 5000:5000 ${DOCKER_IMAGE}:${env.BUILD_ID}'
-                    sleep 10 // Czekaj na uruchomienie kontenera
+                    docker.image("${env.DOCKER_IMAGE}:latest").run("-p 5000:5000")
                 }
             }
         }
@@ -35,8 +32,7 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    // Testowanie aplikacji
-                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" "http://localhost:5000/bmi?weight=70&height=1.75"', returnStdout: true).trim()
+                    def response = bat(script: 'curl -s -o NUL -w "%%{http_code}" -X POST http://localhost:5000/bmi -H "Content-Type: application/json" -d "{\\"weight\\": 70, \\"height\\": 1.75}"', returnStdout: true).trim()
                     if (response != '200') {
                         error "Test failed with response code ${response}"
                     }
@@ -52,11 +48,6 @@ pipeline {
     }
 
     post {
-        always {
-            // Zatrzymaj kontener po zakończeniu pipeline
-            sh 'docker stop bmi-container || true'
-            sh 'docker rm bmi-container || true'
-        }
         failure {
             emailext (
                 subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) failed",
@@ -64,6 +55,7 @@ pipeline {
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
+
         success {
             emailext (
                 subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) succeeded",
