@@ -17,32 +17,34 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build(env.DOCKER_IMAGE)
+                    docker.build("${env.DOCKER_IMAGE}")
                 }
             }
         }
+
         stage('Run Docker Container') {
             steps {
                 script {
-                    docker.image("${env.DOCKER_IMAGE}:latest").run("-p 5000:5000")
+                    docker.image("${env.DOCKER_IMAGE}").run("-d -p 5000:5000 --name bmi-container")
                 }
             }
         }
 
-            stage('Test') {
-    steps {
-        script {
-            def response = bat(script: 'curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/bmi -H "Content-Type: application/json" -d "{\"weight\": 70, \"height\": 1.75}"', returnStdout: true).trim()
-            if (response != '200') {
-                error "Test failed with response code ${response}"
+        stage('Test') {
+            steps {
+                script {
+                    sleep 10 // Czekaj na uruchomienie kontenera
+                    def response = bat(script: '''
+                        powershell -Command "$headers = @{ 'Content-Type' = 'application/json' }; $body = '{\\"weight\\": 70, \\"height\\": 1.75}'; try { $response = Invoke-RestMethod -Uri http://localhost:5000/bmi -Method Post -Headers $headers -Body $body; Write-Output $response } catch { Write-Output $_.Exception.Response.StatusCode; Write-Output $_.Exception.Response.StatusDescription; $stream = New-Object IO.StreamReader($_.Exception.Response.GetResponseStream()); $errorResponse = $stream.ReadToEnd(); Write-Output $errorResponse }"
+                    ''', returnStdout: true).trim()
+                    echo "Response: ${response}"
+                    if (!response.contains('bmi')) {
+                        error "Test failed with response: ${response}"
+                    }
+                }
             }
         }
-    }
-}
 
-
-
-        
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
