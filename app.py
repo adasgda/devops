@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 app = Flask(__name__)
 
-@app.route('/bmi', methods=['POST'])
+@app.route('/bmi')
 def calculate_bmi():
     data = request.get_json()
     height = float(data['height'])
