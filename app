@@ -2,10 +2,11 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route('/bmi', methods=['GET'])
+@app.route('/bmi', methods=['POST'])
 def calculate_bmi():
-    height = float(request.args.get('height'))
-    weight = float(request.args.get('weight'))
+    data = request.get_json()
+    height = float(data['height'])
+    weight = float(data['weight'])
     bmi = weight / (height ** 2)
     return jsonify(bmi=bmi)
 
