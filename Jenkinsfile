@@ -17,16 +17,16 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build(env.DOCKER_IMAGE)
+                    docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}")
                 }
             }
         }
 
-        stage('Run Docker Compose') {
+        stage('Run Docker Container') {
             steps {
                 script {
                     // Uruchom kontener w tle
-                    sh 'docker-compose up -d'
+                    sh 'docker run -d --name bmi-container -p 5000:5000 ${DOCKER_IMAGE}:${env.BUILD_ID}'
                     sleep 10 // Czekaj na uruchomienie kontenera
                 }
             }
@@ -36,7 +36,7 @@ pipeline {
             steps {
                 script {
                     // Testowanie aplikacji
-                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" -X GET "http://localhost:5000/bmi?weight=70&height=1.75"', returnStdout: true).trim()
+                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" "http://localhost:5000/bmi?weight=70&height=1.75"', returnStdout: true).trim()
                     if (response != '200') {
                         error "Test failed with response code ${response}"
                     }
@@ -53,8 +53,9 @@ pipeline {
 
     post {
         always {
-            // Zatrzymaj kontenery po zakończeniu pipeline
-            sh 'docker-compose down'
+            // Zatrzymaj kontener po zakończeniu pipeline
+            sh 'docker stop bmi-container || true'
+            sh 'docker rm bmi-container || true'
         }
         failure {
             emailext (
