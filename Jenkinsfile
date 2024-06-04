@@ -19,8 +19,8 @@ pipeline {
                 script {
                     docker.build(env.DOCKER_IMAGE)
                 }
+            }
         }
-    }
         stage('Run Docker Container') {
             steps {
                 script {
@@ -29,7 +29,7 @@ pipeline {
             }
         }
         
-   stage('Test') {
+        stage('Test') {
             steps {
                 script {
                     echo 'Testing application...'
@@ -49,7 +49,7 @@ pipeline {
         failure {
             emailext (
                 subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) failed",
-                body: "Please see the console output for more details.",
+                body: "Napotkano błędy, sprawdź konsolę.",
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
@@ -57,7 +57,7 @@ pipeline {
         success {
             emailext (
                 subject: "Job '${env.JOB_NAME}' (${env.BUILD_NUMBER}) succeeded",
-                body: "Build and deployment were successful.",
+                body: "Proces przebiegł pomyślnie, nie napotkano błędów.",
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
